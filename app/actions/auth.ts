@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
-import { profileFormSchema, sanitizeObject, type ProfileFormData } from '@/lib/validation';
+import { profileFormSchema, sanitizeObject, ProfileFormData } from '@/lib/validation';
 
 export interface ActionResult {
   success: boolean;
@@ -13,14 +13,22 @@ export interface ActionResult {
 }
 
 /**
- * Mock verification function that checks if the name matches the document
+ * Demo verification function - accepts any valid format without strict validation
  * In production, this would call actual Aadhaar/PAN verification APIs
+ * 
+ * DEMO MODE: This function now accepts any input with valid format
+ * - Does NOT verify name matching with document
+ * - Only checks basic format requirements
  */
 function mockVerifyDocument(fullName: string, documentType: string, documentNumber: string): boolean {
-  // Mock verification logic:
-  // - Check if document number has valid format
-  // - Simulate name matching (in real scenario, this would call external API)
+  // Demo mode: Just verify basic format, no strict validation
   
+  // Check if name is not empty
+  if (!fullName || fullName.trim().length === 0) {
+    return false;
+  }
+  
+  // Check document format only (no name matching)
   if (documentType === 'aadhaar') {
     // Aadhaar should be 12 digits
     if (!/^\d{12}$/.test(documentNumber)) {
@@ -33,12 +41,8 @@ function mockVerifyDocument(fullName: string, documentType: string, documentNumb
     }
   }
   
-  // Mock: Simulate verification failure if name is too short
-  // In production, this would verify against actual government records
-  if (fullName.trim().split(' ').length < 2) {
-    return false;
-  }
-  
+  // Demo: Accept any name without matching against document
+  // In production, this would verify name matches government records
   return true;
 }
 
@@ -79,7 +83,7 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
 
     const validatedData = validationResult.data;
 
-    // Perform mock verification
+    // Perform demo verification (format check only)
     const isVerified = mockVerifyDocument(
       validatedData.fullName,
       validatedData.documentType,
@@ -89,7 +93,7 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
     if (!isVerified) {
       return {
         success: false,
-        error: 'Verification failed. Please ensure your name matches your document and the document number is valid.',
+        error: 'Verification failed. Please ensure the document number format is correct.',
       };
     }
 
@@ -141,3 +145,4 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
     };
   }
 }
+

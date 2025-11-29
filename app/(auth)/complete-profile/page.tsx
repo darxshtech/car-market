@@ -3,7 +3,8 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { completeProfile, ProfileFormData } from '@/app/actions/auth';
+import { completeProfile } from '@/app/actions/auth';
+import { ProfileFormData } from '@/lib/validation';
 
 export default function CompleteProfilePage() {
   const { data: session, status, update } = useSession();
@@ -142,6 +143,11 @@ export default function CompleteProfilePage() {
           <p className="text-gray-300 text-sm">
             We need a few more details to verify your identity
           </p>
+          <div className="mt-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg px-3 py-2">
+            <p className="text-yellow-400 text-xs font-medium">
+              🎭 DEMO MODE: Name verification disabled. Any valid format will be accepted.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -251,8 +257,8 @@ export default function CompleteProfilePage() {
             />
             <p className="text-xs text-gray-400 mt-1">
               {formData.documentType === 'aadhaar' 
-                ? 'Enter your 12-digit Aadhaar number' 
-                : 'Enter your 10-character PAN (e.g., ABCDE1234F)'}
+                ? 'Demo: Enter any 12-digit number (e.g., 123456789012)' 
+                : 'Demo: Enter any valid PAN format (e.g., ABCDE1234F)'}
             </p>
           </div>
 
