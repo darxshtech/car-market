@@ -1,0 +1,82 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import connectDB from '@/lib/mongodb';
+import User from '@/lib/models/User';
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Admin routes protection
+  if (pathname.startsWith('/admin')) {
+    // Check for admin credentials
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPass = process.env.ADMIN_PASS;
+
+    if (!adminEmail || !adminPass) {
+      console.error('Admin credentials not configured');
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Get session token
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    // Check if user is authenticated and is admin
+    if (!token || token.email !== adminEmail) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
+    // Validate session token is not expired (getToken handles this automatically)
+    // If token is expired, getToken returns null and user is redirected above
+
+    return NextResponse.next();
+  }
+
+  // Protected routes for authenticated users
+  if (pathname.startsWith('/sell-car') || pathname.startsWith('/my-garage')) {
+    // Validate session token
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    // Handle unauthenticated users (including expired sessions)
+    if (!token) {
+      return NextResponse.redirect(new URL('/signin', request.url));
+    }
+
+    // Check if profile is complete
+    if (!token.profileComplete) {
+      return NextResponse.redirect(new URL('/complete-profile', request.url));
+    }
+
+    // Check banned status from database for real-time enforcement
+    // This ensures that if an admin bans a user, they are immediately blocked
+    try {
+      await connectDB();
+      const user = await User.findById(token.id);
+      
+      if (user && user.banned) {
+        // User is banned - deny access
+        return NextResponse.redirect(new URL('/?error=banned', request.url));
+      }
+    } catch (error) {
+      console.error('Error checking user banned status:', error);
+      // On error, fall back to token's banned status
+      if (token.banned) {
+        return NextResponse.redirect(new URL('/?error=banned', request.url));
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/admin/:path*', '/sell-car/:path*', '/my-garage/:path*'],
+};
