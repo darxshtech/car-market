@@ -3,19 +3,13 @@
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
-
-export interface ProfileFormData {
-  fullName: string;
-  email: string;
-  mobileNumber: string;
-  documentType: 'aadhaar' | 'pan';
-  documentNumber: string;
-}
+import { profileFormSchema, sanitizeObject, type ProfileFormData } from '@/lib/validation';
 
 export interface ActionResult {
   success: boolean;
   error?: string;
   message?: string;
+  fieldErrors?: Record<string, string[]>;
 }
 
 /**
@@ -60,28 +54,36 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
       };
     }
 
-    // Validate required fields
-    if (!formData.fullName || !formData.email || !formData.mobileNumber || 
-        !formData.documentType || !formData.documentNumber) {
+    // Sanitize input data
+    const sanitizedData = sanitizeObject(formData);
+
+    // Validate with Zod schema
+    const validationResult = profileFormSchema.safeParse(sanitizedData);
+    
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string[]> = {};
+      validationResult.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = [];
+        }
+        fieldErrors[field].push(err.message);
+      });
+      
       return {
         success: false,
-        error: 'All fields are required',
+        error: 'Validation failed',
+        fieldErrors,
       };
     }
 
-    // Validate mobile number (should be 10 digits)
-    if (!/^\d{10}$/.test(formData.mobileNumber)) {
-      return {
-        success: false,
-        error: 'Mobile number must be 10 digits',
-      };
-    }
+    const validatedData = validationResult.data;
 
     // Perform mock verification
     const isVerified = mockVerifyDocument(
-      formData.fullName,
-      formData.documentType,
-      formData.documentNumber
+      validatedData.fullName,
+      validatedData.documentType,
+      validatedData.documentNumber
     );
 
     if (!isVerified) {
@@ -111,11 +113,11 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
     // Create new user
     const newUser = await User.create({
       googleId,
-      email: formData.email,
-      fullName: formData.fullName,
-      mobileNumber: formData.mobileNumber,
-      documentType: formData.documentType,
-      documentNumber: formData.documentNumber,
+      email: validatedData.email,
+      fullName: validatedData.fullName,
+      mobileNumber: validatedData.mobileNumber,
+      documentType: validatedData.documentType,
+      documentNumber: validatedData.documentNumber,
       verified: true, // Set to true after successful mock verification
       banned: false,
     });

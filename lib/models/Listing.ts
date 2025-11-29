@@ -109,6 +109,6 @@ const ListingSchema = new Schema<IListing>(
 ListingSchema.index({ brand: 1, city: 1, price: 1 });
 ListingSchema.index({ createdAt: -1 });
 
-const Listing: Model<IListing> = mongoose.models.Listing || mongoose.model<IListing>('Listing', ListingSchema);
+const Listing: Model<IListing> = (mongoose.models && mongoose.models.Listing) || mongoose.model<IListing>('Listing', ListingSchema);
 
 export default Listing;

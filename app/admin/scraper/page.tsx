@@ -10,7 +10,7 @@ export default function AdminScraperPage() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [scrapedData, setScrapedData] = useState<ScrapedCarData | null>(null);
+  const [scrapedData, setScrapedData] = useState<ScrapedCarData[]>([]);
   const [importing, setImporting] = useState(false);
 
   const handleScrape = async (e: React.FormEvent) => {
@@ -23,13 +23,14 @@ export default function AdminScraperPage() {
 
     setLoading(true);
     setError('');
-    setScrapedData(null);
+    setScrapedData([]);
 
     try {
       const result = await scrapeListing(url);
       
       if (result.success && result.data) {
-        setScrapedData(result.data);
+        // result.data is now always an array
+        setScrapedData(Array.isArray(result.data) ? result.data : [result.data]);
       } else {
         setError(result.error || 'Failed to scrape listing');
       }
@@ -42,9 +43,9 @@ export default function AdminScraperPage() {
   };
 
   const handleImport = async () => {
-    if (!scrapedData) return;
+    if (scrapedData.length === 0) return;
 
-    if (!confirm('Are you sure you want to import this listing?')) {
+    if (!confirm(`Are you sure you want to import ${scrapedData.length} listing(s)?`)) {
       return;
     }
 
@@ -52,14 +53,14 @@ export default function AdminScraperPage() {
     setError('');
 
     try {
-      const result = await importScrapedListings([scrapedData]);
+      const result = await importScrapedListings(scrapedData);
       
       if (result.success) {
-        alert(result.message || 'Listing imported successfully');
+        alert(result.message || 'Listings imported successfully');
         setUrl('');
-        setScrapedData(null);
+        setScrapedData([]);
       } else {
-        setError(result.error || 'Failed to import listing');
+        setError(result.error || 'Failed to import listings');
       }
     } catch (err) {
       console.error('Import error:', err);
@@ -132,90 +133,116 @@ export default function AdminScraperPage() {
         )}
 
         {/* Scraped Data Preview */}
-        {scrapedData && (
+        {scrapedData.length > 0 && (
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Scraped Data Preview</h2>
+              <h2 className="text-2xl font-bold text-white">
+                Scraped Data Preview ({scrapedData.length} car{scrapedData.length > 1 ? 's' : ''})
+              </h2>
               <button
                 onClick={handleImport}
                 disabled={importing}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {importing ? 'Importing...' : 'Approve & Import'}
+                {importing ? 'Importing...' : `Approve & Import All (${scrapedData.length})`}
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Images */}
-              {scrapedData.images.length > 0 && (
-                <div>
-                  <p className="text-gray-400 text-sm mb-2">Images ({scrapedData.images.length})</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {scrapedData.images.slice(0, 4).map((img, idx) => (
-                      <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
-                        <img src={img} alt={`Car ${idx + 1}`} className="w-full h-full object-cover" />
+            <div className="space-y-6">
+              {scrapedData.map((car, carIdx) => (
+                <div key={carIdx} className="border border-gray-700 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-white mb-3">
+                    Car #{carIdx + 1}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {/* Images */}
+                    {car.images.length > 0 && (
+                      <div>
+                        <p className="text-gray-400 text-sm mb-2">Images ({car.images.length})</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {car.images.slice(0, 4).map((img, idx) => (
+                            <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
+                              <img src={img} alt={`Car ${carIdx + 1} - ${idx + 1}`} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Data Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <tbody className="divide-y divide-gray-700">
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium w-1/3">Car Name</td>
+                            <td className="py-2 text-white">{car.carName}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">Model</td>
+                            <td className="py-2 text-white">{car.model}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">Price</td>
+                            <td className="py-2 text-white">₹{car.price.toLocaleString('en-IN')}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">Year</td>
+                            <td className="py-2 text-white">{car.yearOfPurchase}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">Kilometers</td>
+                            <td className="py-2 text-white">{car.kmDriven.toLocaleString('en-IN')} km</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">Owners</td>
+                            <td className="py-2 text-white">{car.numberOfOwners}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 text-gray-400 font-medium">City</td>
+                            <td className="py-2 text-white">{car.city}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* Data Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <tbody className="divide-y divide-gray-700">
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Car Name</td>
-                      <td className="py-3 text-white">{scrapedData.carName}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Model</td>
-                      <td className="py-3 text-white">{scrapedData.model}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Price</td>
-                      <td className="py-3 text-white">₹{scrapedData.price.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Owner Name</td>
-                      <td className="py-3 text-white">{scrapedData.ownerName}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Year of Purchase</td>
-                      <td className="py-3 text-white">{scrapedData.yearOfPurchase}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Kilometers Driven</td>
-                      <td className="py-3 text-white">{scrapedData.kmDriven.toLocaleString('en-IN')} km</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">Number of Owners</td>
-                      <td className="py-3 text-white">{scrapedData.numberOfOwners}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 text-gray-400 font-medium">City</td>
-                      <td className="py-3 text-white">{scrapedData.city}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Instructions */}
-        {!scrapedData && !loading && (
+        {scrapedData.length === 0 && !loading && (
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h3 className="text-lg font-bold text-white mb-3">How to use the scraper</h3>
             <ol className="list-decimal list-inside space-y-2 text-gray-300">
-              <li>Enter the URL of an external car listing</li>
+              <li>Enter the URL of a car listing page (supports both single cars and listing pages with multiple cars)</li>
               <li>Click "Scrape Listing" to extract the data</li>
-              <li>Review the extracted data in the preview table</li>
-              <li>Click "Approve & Import" to add the listing to the marketplace</li>
+              <li>Review the extracted data in the preview</li>
+              <li>Click "Approve & Import All" to add the listings to the marketplace</li>
             </ol>
+            <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4">
+              <p className="text-yellow-200 text-sm font-medium mb-2">
+                ⚠️ Note: Many car websites block automated scraping
+              </p>
+              <p className="text-yellow-100/80 text-sm">
+                If scraping fails, try the demo mode by entering: <code className="bg-gray-800 px-2 py-1 rounded">https://demo.test</code>
+              </p>
+            </div>
+            
             <p className="mt-4 text-sm text-gray-400">
-              Note: The scraper will attempt to extract car details, images, and pricing information from the provided URL.
+              <strong>Supported sites:</strong> CarDekho.com, CarWale.com, and other car listing websites
             </p>
+            <p className="mt-2 text-sm text-gray-400">
+              <strong>Example URLs:</strong>
+            </p>
+            <ul className="mt-1 text-sm text-gray-400 list-disc list-inside ml-4">
+              <li><strong>Demo Mode:</strong> https://demo.test (for testing)</li>
+              <li>https://www.cardekho.com/used-cars+in+delhi</li>
+              <li>https://www.cardekho.com/used-cars+in+mumbai</li>
+              <li>https://www.carwale.com/used-cars/</li>
+            </ul>
           </div>
         )}
       </div>

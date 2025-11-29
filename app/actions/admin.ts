@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Listing from '@/lib/models/Listing';
 import User from '@/lib/models/User';
 import AdminLog from '@/lib/models/AdminLog';
-import { extractCarData, ScrapedCarData } from '@/lib/scraper';
+import { extractCarData, extractMultipleCarData, ScrapedCarData } from '@/lib/scraper';
 
 export interface ActionResult {
   success: boolean;
@@ -188,7 +188,8 @@ export async function banUser(userId: string): Promise<ActionResult> {
 
 
 /**
- * Scrape a car listing from an external URL
+ * Scrape car listings from an external URL
+ * Supports both single car pages and listing pages with multiple cars
  * Only admin can scrape listings
  */
 export async function scrapeListing(url: string): Promise<ActionResult> {
@@ -212,19 +213,30 @@ export async function scrapeListing(url: string): Promise<ActionResult> {
       };
     }
 
-    // Extract car data from URL
-    const result = await extractCarData(url);
+    // Try to extract multiple cars first (for listing pages)
+    const multipleResult = await extractMultipleCarData(url);
 
-    if (!result.success || !result.data) {
+    if (multipleResult.success && multipleResult.data && multipleResult.data.length > 0) {
+      return {
+        success: true,
+        data: multipleResult.data,
+        message: `Successfully scraped ${multipleResult.count} car listings`,
+      };
+    }
+
+    // Fallback to single car extraction
+    const singleResult = await extractCarData(url);
+
+    if (!singleResult.success || !singleResult.data) {
       return {
         success: false,
-        error: result.error || 'Failed to scrape listing data',
+        error: singleResult.error || 'Failed to scrape listing data',
       };
     }
 
     return {
       success: true,
-      data: result.data,
+      data: [singleResult.data], // Wrap in array for consistency
       message: 'Listing scraped successfully',
     };
   } catch (error) {
@@ -281,8 +293,26 @@ export async function importScrapedListings(
 
     // Import each scraped listing
     const importedListings = [];
+    const errors = [];
+    
     for (const data of scrapedData) {
       try {
+        // Validate required fields
+        if (!data.carName || !data.model) {
+          errors.push(`Skipped: Missing car name or model`);
+          continue;
+        }
+
+        if (!data.price || data.price <= 0) {
+          errors.push(`Skipped ${data.carName}: Invalid price`);
+          continue;
+        }
+
+        if (!data.images || data.images.length === 0) {
+          errors.push(`Skipped ${data.carName}: No images`);
+          continue;
+        }
+
         const listing = await Listing.create({
           sellerId: adminUser._id,
           brand: data.carName.split(' ')[0] || 'Unknown',
@@ -290,14 +320,14 @@ export async function importScrapedListings(
           variant: 'Standard',
           fuelType: 'petrol', // Default, would need to be extracted
           transmission: 'manual', // Default, would need to be extracted
-          yearOfOwnership: data.yearOfPurchase,
-          numberOfOwners: data.numberOfOwners,
-          kmDriven: data.kmDriven,
-          city: data.city,
+          yearOfOwnership: data.yearOfPurchase || new Date().getFullYear(),
+          numberOfOwners: data.numberOfOwners || 1,
+          kmDriven: data.kmDriven || 0,
+          city: data.city || 'Unknown',
           state: 'Unknown', // Would need to be extracted or mapped
           description: `Imported listing: ${data.carName} ${data.model}`,
           price: data.price,
-          images: data.images,
+          images: data.images.slice(0, 10), // Limit to 10 images
           status: 'approved', // Scraped listings are auto-approved
           interestCount: 0,
           source: 'scraped',
@@ -319,23 +349,38 @@ export async function importScrapedListings(
         });
       } catch (error) {
         console.error('Error importing listing:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Failed to import ${data.carName}: ${errorMsg}`);
         // Continue with other listings
       }
     }
 
+    if (importedListings.length === 0 && errors.length > 0) {
+      return {
+        success: false,
+        error: `Failed to import any listings. Errors: ${errors.join(', ')}`,
+      };
+    }
+
+    const message = importedListings.length > 0
+      ? `Successfully imported ${importedListings.length} listing(s)${errors.length > 0 ? `. Errors: ${errors.join(', ')}` : ''}`
+      : 'No listings were imported';
+
     return {
-      success: true,
-      message: `Successfully imported ${importedListings.length} listing(s)`,
+      success: importedListings.length > 0,
+      message,
       data: {
         count: importedListings.length,
         listings: importedListings,
+        errors,
       },
     };
   } catch (error) {
     console.error('Error importing scraped listings:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return {
       success: false,
-      error: 'An error occurred while importing listings',
+      error: `An error occurred while importing listings: ${errorMsg}`,
     };
   }
 }

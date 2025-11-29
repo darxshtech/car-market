@@ -9,13 +9,18 @@ export async function middleware(request: NextRequest) {
 
   // Admin routes protection
   if (pathname.startsWith('/admin')) {
+    // Allow access to admin login page without authentication
+    if (pathname === '/admin/login') {
+      return NextResponse.next();
+    }
+
     // Check for admin credentials
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPass = process.env.ADMIN_PASS;
 
     if (!adminEmail || !adminPass) {
       console.error('Admin credentials not configured');
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
     // Get session token
@@ -26,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
     // Check if user is authenticated and is admin
     if (!token || token.email !== adminEmail) {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
     // Validate session token is not expired (getToken handles this automatically)

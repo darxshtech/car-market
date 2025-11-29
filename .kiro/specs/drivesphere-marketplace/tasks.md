@@ -422,7 +422,8 @@
   - Ensure widget doesn't obstruct critical UI elements
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-- [-] 20. Enhance route protection middleware
+- [x] 20. Enhance route protection middleware
+
 
   - Update middleware.ts to check banned status and deny access if user is banned
   - Ensure /sell-car and /my-garage routes redirect unauthenticated users to /signin
@@ -430,21 +431,27 @@
   - Handle expired sessions with redirect to signin
   - _Requirements: 12.1, 12.2, 12.4, 12.5, 9.4_
 
-- [ ] 20.1 Write property test for protected route authentication
+- [x] 20.1 Write property test for protected route authentication
+
 
 
   - **Property 29: Protected route authentication**
   - **Validates: Requirements 12.1, 12.2**
 
-- [ ] 20.2 Write property test for session validation on protected routes
+- [x] 20.2 Write property test for session validation on protected routes
+
   - **Property 30: Session validation on protected routes**
   - **Validates: Requirements 12.4**
 
-- [ ] 20.3 Write property test for expired session handling
+- [x] 20.3 Write property test for expired session handling
+
   - **Property 31: Expired session handling**
   - **Validates: Requirements 12.5**
 
-- [ ] 21. Add input validation and sanitization
+- [x] 21. Add input validation and sanitization
+
+
+
   - Create lib/validation.ts with Zod schemas for all forms
   - Add validation schemas for profile form, listing form, ownership form, admin forms
   - Update server actions in app/actions/auth.ts and app/actions/listings.ts to use Zod validation
@@ -453,7 +460,9 @@
   - Add error handling for validation failures
   - _Requirements: 13.2, 13.5_
 
-- [ ] 21.1 Write property test for input sanitization
+- [x] 21.1 Write property test for input sanitization
+
+
   - **Property 32: Input sanitization**
   - **Validates: Requirements 13.2**
 

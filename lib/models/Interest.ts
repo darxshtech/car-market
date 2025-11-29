@@ -29,6 +29,6 @@ InterestSchema.index({ listingId: 1, userId: 1 }, { unique: true });
 // Index for counting interests per listing
 InterestSchema.index({ listingId: 1 });
 
-const Interest: Model<IInterest> = mongoose.models.Interest || mongoose.model<IInterest>('Interest', InterestSchema);
+const Interest: Model<IInterest> = (mongoose.models && mongoose.models.Interest) || mongoose.model<IInterest>('Interest', InterestSchema);
 
 export default Interest;

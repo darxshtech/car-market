@@ -80,6 +80,9 @@ describe('Middleware Property Tests', () => {
         fc.string({ minLength: 10, maxLength: 30 }), // userId
         fc.emailAddress(), // email
         async (protectedPath, userId, email) => {
+          // Clear database before each property test run
+          await User.deleteMany({});
+
           // Create user in database
           const user = await User.create({
             googleId: userId,
@@ -165,6 +168,9 @@ describe('Middleware Property Tests', () => {
         fc.emailAddress(), // email
         fc.integer({ min: Math.floor(Date.now() / 1000) + 60, max: Math.floor(Date.now() / 1000) + 7200 }), // future expiry
         async (protectedPath, userId, email, exp) => {
+          // Clear database before each property test run
+          await User.deleteMany({});
+
           // Create user in database
           const user = await User.create({
             googleId: userId,
@@ -289,6 +295,9 @@ describe('Middleware Property Tests', () => {
         fc.string({ minLength: 10, maxLength: 30 }), // userId
         fc.emailAddress(), // email
         async (protectedPath, userId, email) => {
+          // Clear database before each property test run
+          await User.deleteMany({});
+
           // Create banned user in database
           const user = await User.create({
             googleId: userId,

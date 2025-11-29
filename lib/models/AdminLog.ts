@@ -42,6 +42,6 @@ const AdminLogSchema = new Schema<IAdminLog>(
 // Compound index for audit trail queries
 AdminLogSchema.index({ targetId: 1, targetType: 1 });
 
-const AdminLog: Model<IAdminLog> = mongoose.models.AdminLog || mongoose.model<IAdminLog>('AdminLog', AdminLogSchema);
+const AdminLog: Model<IAdminLog> = (mongoose.models && mongoose.models.AdminLog) || mongoose.model<IAdminLog>('AdminLog', AdminLogSchema);
 
 export default AdminLog;

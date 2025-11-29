@@ -4,12 +4,19 @@ import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Listing from '@/lib/models/Listing';
 import Interest from '@/lib/models/Interest';
+import {
+  ownershipFormSchema,
+  carListingFormSchema,
+  sanitizeString,
+  validateImageFiles,
+} from '@/lib/validation';
 
 export interface ActionResult {
   success: boolean;
   error?: string;
   message?: string;
   data?: any;
+  fieldErrors?: Record<string, string[]>;
 }
 
 /**
@@ -37,28 +44,39 @@ export async function verifyOwnership(
       };
     }
 
-    // Validate inputs
-    if (!registrationNumber || !ownerName) {
+    // Sanitize inputs
+    const sanitizedData = {
+      registrationNumber: sanitizeString(registrationNumber),
+      ownerName: sanitizeString(ownerName),
+    };
+
+    // Validate with Zod schema
+    const validationResult = ownershipFormSchema.safeParse(sanitizedData);
+    
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string[]> = {};
+      validationResult.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = [];
+        }
+        fieldErrors[field].push(err.message);
+      });
+      
       return {
         success: false,
-        error: 'Registration number and owner name are required',
+        error: 'Validation failed',
+        fieldErrors,
       };
     }
+
+    const validatedData = validationResult.data;
 
     // Mock verification logic
     // In production, this would call an external API to verify vehicle ownership
     
-    // Validate registration number format (Indian format: XX00XX0000)
-    const regNumberPattern = /^[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}$/i;
-    if (!regNumberPattern.test(registrationNumber.replace(/\s+/g, ''))) {
-      return {
-        success: false,
-        error: 'Invalid registration number format. Expected format: XX00XX0000',
-      };
-    }
-
     // Mock: Simulate verification success if owner name has at least 2 words
-    const nameParts = ownerName.trim().split(/\s+/);
+    const nameParts = validatedData.ownerName.trim().split(/\s+/);
     if (nameParts.length < 2) {
       return {
         success: false,
@@ -73,8 +91,8 @@ export async function verifyOwnership(
       success: true,
       message: 'Ownership verified successfully',
       data: {
-        registrationNumber: registrationNumber.toUpperCase(),
-        ownerName,
+        registrationNumber: validatedData.registrationNumber.toUpperCase(),
+        ownerName: validatedData.ownerName,
       },
     };
   } catch (error) {
@@ -108,118 +126,53 @@ export async function createListing(formData: FormData): Promise<ActionResult> {
       };
     }
 
-    // Extract form data
-    const brand = formData.get('brand') as string;
-    const model = formData.get('model') as string;
-    const variant = formData.get('variant') as string;
-    const fuelType = formData.get('fuelType') as string;
-    const transmission = formData.get('transmission') as string;
-    const kmDriven = formData.get('kmDriven') as string;
-    const city = formData.get('city') as string;
-    const state = formData.get('state') as string;
-    const description = formData.get('description') as string;
-    const price = formData.get('price') as string;
-    const yearOfOwnership = formData.get('yearOfOwnership') as string;
-    const numberOfOwners = formData.get('numberOfOwners') as string;
+    // Extract and sanitize form data
+    const rawData = {
+      brand: sanitizeString(formData.get('brand') as string),
+      model: sanitizeString(formData.get('model') as string),
+      variant: sanitizeString(formData.get('variant') as string),
+      fuelType: formData.get('fuelType') as string,
+      transmission: formData.get('transmission') as string,
+      kmDriven: parseInt(formData.get('kmDriven') as string),
+      city: sanitizeString(formData.get('city') as string),
+      state: sanitizeString(formData.get('state') as string),
+      description: sanitizeString(formData.get('description') as string),
+      price: parseInt(formData.get('price') as string),
+      yearOfOwnership: parseInt(formData.get('yearOfOwnership') as string),
+      numberOfOwners: parseInt(formData.get('numberOfOwners') as string),
+    };
 
-    // Validate required fields
-    if (!brand || !model || !variant || !fuelType || !transmission || 
-        !kmDriven || !city || !state || !description || !price || 
-        !yearOfOwnership || !numberOfOwners) {
+    // Validate with Zod schema
+    const validationResult = carListingFormSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      const fieldErrors: Record<string, string[]> = {};
+      validationResult.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = [];
+        }
+        fieldErrors[field].push(err.message);
+      });
+      
       return {
         success: false,
-        error: 'All fields are required',
+        error: 'Validation failed',
+        fieldErrors,
       };
     }
 
-    // Validate numeric fields
-    const kmDrivenNum = parseInt(kmDriven);
-    const priceNum = parseInt(price);
-    const yearNum = parseInt(yearOfOwnership);
-    const ownersNum = parseInt(numberOfOwners);
+    const validatedData = validationResult.data;
 
-    if (isNaN(kmDrivenNum) || kmDrivenNum < 0) {
-      return {
-        success: false,
-        error: 'Invalid kilometers driven',
-      };
-    }
-
-    if (isNaN(priceNum) || priceNum <= 0) {
-      return {
-        success: false,
-        error: 'Invalid price',
-      };
-    }
-
-    const currentYear = new Date().getFullYear();
-    if (isNaN(yearNum) || yearNum < 1900 || yearNum > currentYear) {
-      return {
-        success: false,
-        error: `Year of ownership must be between 1900 and ${currentYear}`,
-      };
-    }
-
-    if (isNaN(ownersNum) || ownersNum < 1 || ownersNum > 10) {
-      return {
-        success: false,
-        error: 'Number of owners must be between 1 and 10',
-      };
-    }
-
-    // Validate fuel type and transmission
-    const validFuelTypes = ['petrol', 'diesel', 'cng', 'electric'];
-    const validTransmissions = ['manual', 'automatic'];
-
-    if (!validFuelTypes.includes(fuelType)) {
-      return {
-        success: false,
-        error: 'Invalid fuel type',
-      };
-    }
-
-    if (!validTransmissions.includes(transmission)) {
-      return {
-        success: false,
-        error: 'Invalid transmission type',
-      };
-    }
-
-    // Process images
+    // Process and validate images
     const imageFiles = formData.getAll('images') as File[];
     
-    if (imageFiles.length === 0) {
+    const imageValidation = validateImageFiles(imageFiles);
+    if (!imageValidation.valid) {
       return {
         success: false,
-        error: 'At least one image is required',
+        error: imageValidation.errors.join(', '),
       };
-    }
-
-    if (imageFiles.length > 10) {
-      return {
-        success: false,
-        error: 'Maximum 10 images allowed',
-      };
-    }
-
-    // Validate image files
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
-
-    for (const file of imageFiles) {
-      if (!validImageTypes.includes(file.type)) {
-        return {
-          success: false,
-          error: 'Only JPEG, PNG, and WebP images are allowed',
-        };
-      }
-
-      if (file.size > maxSize) {
-        return {
-          success: false,
-          error: 'Each image must be less than 5MB',
-        };
-      }
     }
 
     // Upload images to GridFS
@@ -240,18 +193,18 @@ export async function createListing(formData: FormData): Promise<ActionResult> {
 
     const listing = await Listing.create({
       sellerId: session.user.id,
-      brand,
-      carModel: model,
-      variant,
-      fuelType,
-      transmission,
-      yearOfOwnership: yearNum,
-      numberOfOwners: ownersNum,
-      kmDriven: kmDrivenNum,
-      city,
-      state,
-      description,
-      price: priceNum,
+      brand: validatedData.brand,
+      carModel: validatedData.model,
+      variant: validatedData.variant,
+      fuelType: validatedData.fuelType,
+      transmission: validatedData.transmission,
+      yearOfOwnership: validatedData.yearOfOwnership,
+      numberOfOwners: validatedData.numberOfOwners,
+      kmDriven: validatedData.kmDriven,
+      city: validatedData.city,
+      state: validatedData.state,
+      description: validatedData.description,
+      price: validatedData.price,
       images: imageUrls,
       status: 'pending',
       source: 'user',
