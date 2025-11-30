@@ -55,7 +55,12 @@ export default async function Home() {
           </p>
           <p className="text-gray-300 text-lg mb-12 max-w-2xl mx-auto">
             Buy and sell cars with confidence. Every user is verified, every listing is approved by our team.
-          </p>
+          </p> 
+          
+           
+          <div>
+            this is demo
+          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
