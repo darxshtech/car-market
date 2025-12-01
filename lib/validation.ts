@@ -4,7 +4,10 @@ import { z } from 'zod';
  * Sanitize string input to prevent XSS attacks
  * Removes potentially dangerous HTML tags and scripts
  */
-export function sanitizeString(input: string): string {
+export function sanitizeString(input: string | null | undefined): string {
+  if (!input) {
+    return '';
+  }
   return input
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')

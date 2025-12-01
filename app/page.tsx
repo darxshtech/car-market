@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import connectDB from '@/lib/mongodb';
 import Listing from '@/lib/models/Listing';
+import User from '@/lib/models/User'; // Import User model for populate
 import CarCard from './components/CarCard';
 import TailorTalkWidget from './components/TailorTalkWidget';
+import HeroSection from './components/HeroSection';
+import FeaturedListings from './components/FeaturedListings';
 
 async function getFeaturedListings() {
   try {
@@ -44,78 +47,11 @@ export default async function Home() {
 
   return (
     <div className="bg-gray-900 min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
-            DriveSphere — India&apos;s Trusted Car Market
-          </h1>
-          <p className="text-xl sm:text-2xl text-cyan-400 mb-8 font-semibold">
-            Verified Users. Verified Cars.
-          </p>
-          <p className="text-gray-300 text-lg mb-12 max-w-2xl mx-auto">
-            Buy and sell cars with confidence. Every user is verified, every listing is approved by our team.
-          </p>
+      {/* Hero Section with Animations */}
+      <HeroSection />
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/buy-car"
-              className="group relative px-8 py-4 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
-            >
-              <span className="relative z-10">Buy a Car</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </Link>
-            <Link
-              href="/sell-car"
-              className="group relative px-8 py-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg border-2 border-cyan-500 hover:border-cyan-400 transition-all duration-300 hover:scale-105 w-full sm:w-auto"
-            >
-              <span className="relative z-10">Sell Your Car</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
-      </section>
-
-      {/* Featured Listings Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-white mb-2">Featured Cars</h2>
-              <p className="text-gray-400">Handpicked vehicles for you</p>
-            </div>
-            <Link
-              href="/buy-car"
-              className="text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-2 transition-colors"
-            >
-              View All
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-
-          {/* Car Grid */}
-          {featuredListings.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {featuredListings.map((listing) => (
-                <CarCard key={listing._id} listing={listing} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">No featured listings available at the moment.</p>
-              <p className="text-gray-500 mt-2">Check back soon for amazing deals!</p>
-            </div>
-          )}
-        </div>
-      </section>
+      {/* Featured Listings Section with Animations */}
+      <FeaturedListings listings={featuredListings} />
 
       {/* Features Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800/50">

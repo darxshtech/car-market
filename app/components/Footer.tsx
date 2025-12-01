@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <h2 className="text-2xl font-bold text-cyan-400 mb-4">DriveSphere</h2>
             <p className="text-gray-400 text-sm mb-4">
-              India's Trusted Car Market. Verified Users. Verified Cars.
+              India&apos;s Trusted Car Market. Verified Users. Verified Cars.
             </p>
             <p className="text-gray-500 text-xs">
               Buy and sell cars with confidence. Every user is verified, every listing is approved.

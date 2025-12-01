@@ -21,7 +21,7 @@ export default function SignInPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-gray-800 rounded-lg shadow-xl">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-cyan-400 mb-2">DriveSphere</h1>
-          <p className="text-gray-300 text-lg">India's Trusted Car Market</p>
+          <p className="text-gray-300 text-lg">India&apos;s Trusted Car Market</p>
           <p className="text-gray-400 text-sm mt-2">Verified Users. Verified Cars.</p>
         </div>
 

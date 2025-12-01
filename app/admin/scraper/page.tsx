@@ -55,16 +55,21 @@ export default function AdminScraperPage() {
     try {
       const result = await importScrapedListings(scrapedData);
       
+      console.log('Import result:', result);
+      
       if (result.success) {
         alert(result.message || 'Listings imported successfully');
         setUrl('');
         setScrapedData([]);
       } else {
-        setError(result.error || 'Failed to import listings');
+        const errorMessage = result.error || 'Failed to import listings';
+        console.error('Import failed:', errorMessage);
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Import error:', err);
-      setError('An error occurred while importing');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while importing';
+      setError(errorMessage);
     } finally {
       setImporting(false);
     }
@@ -163,6 +168,7 @@ export default function AdminScraperPage() {
                         <div className="grid grid-cols-4 gap-2">
                           {car.images.slice(0, 4).map((img, idx) => (
                             <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={img} alt={`Car ${carIdx + 1} - ${idx + 1}`} className="w-full h-full object-cover" />
                             </div>
                           ))}
@@ -218,9 +224,9 @@ export default function AdminScraperPage() {
             <h3 className="text-lg font-bold text-white mb-3">How to use the scraper</h3>
             <ol className="list-decimal list-inside space-y-2 text-gray-300">
               <li>Enter the URL of a car listing page (supports both single cars and listing pages with multiple cars)</li>
-              <li>Click "Scrape Listing" to extract the data</li>
+              <li>Click &quot;Scrape Listing&quot; to extract the data</li>
               <li>Review the extracted data in the preview</li>
-              <li>Click "Approve & Import All" to add the listings to the marketplace</li>
+              <li>Click &quot;Approve & Import All&quot; to add the listings to the marketplace</li>
             </ol>
             <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2">

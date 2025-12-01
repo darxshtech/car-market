@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { encrypt, decrypt } from '../encryption';
 
 export interface IUser extends Document {
   googleId: string;
@@ -11,6 +12,7 @@ export interface IUser extends Document {
   banned: boolean;
   createdAt: Date;
   updatedAt: Date;
+  getDecryptedDocumentNumber(): string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -58,6 +60,26 @@ const UserSchema = new Schema<IUser>(
     timestamps: true,
   }
 );
+
+// Encrypt documentNumber before saving
+UserSchema.pre('save', function (next) {
+  if (this.isModified('documentNumber') && this.documentNumber) {
+    // Only encrypt if not already encrypted (check if it's base64)
+    try {
+      // If it can be decrypted, it's already encrypted
+      decrypt(this.documentNumber);
+    } catch {
+      // Not encrypted yet, so encrypt it
+      this.documentNumber = encrypt(this.documentNumber);
+    }
+  }
+  next();
+});
+
+// Method to get decrypted document number
+UserSchema.methods.getDecryptedDocumentNumber = function (): string {
+  return decrypt(this.documentNumber);
+};
 
 const User: Model<IUser> = (mongoose.models && mongoose.models.User) || mongoose.model<IUser>('User', UserSchema);
 

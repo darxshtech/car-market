@@ -10,6 +10,10 @@ let mongoServer: MongoMemoryServer;
 
 // Mock next-auth
 vi.mock('next-auth', () => ({
+  default: vi.fn(),
+}));
+
+vi.mock('next-auth/next', () => ({
   getServerSession: vi.fn(),
 }));
 
@@ -21,7 +25,7 @@ vi.mock('@/lib/mongodb', () => ({
   }),
 }));
 
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
