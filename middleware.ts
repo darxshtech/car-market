@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import connectDB from '@/lib/mongodb';
-import User from '@/lib/models/User';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -58,22 +56,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/complete-profile', request.url));
     }
 
-    // Check banned status from database for real-time enforcement
-    // This ensures that if an admin bans a user, they are immediately blocked
-    try {
-      await connectDB();
-      const user = await User.findById(token.id);
-      
-      if (user && user.banned) {
-        // User is banned - deny access
-        return NextResponse.redirect(new URL('/?error=banned', request.url));
-      }
-    } catch (error) {
-      console.error('Error checking user banned status:', error);
-      // On error, fall back to token's banned status
-      if (token.banned) {
-        return NextResponse.redirect(new URL('/?error=banned', request.url));
-      }
+    // Check banned status from session token
+    if (token.banned) {
+      return NextResponse.redirect(new URL('/?error=banned', request.url));
     }
 
     return NextResponse.next();

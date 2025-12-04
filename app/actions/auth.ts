@@ -22,12 +22,12 @@ export interface ActionResult {
  */
 function mockVerifyDocument(fullName: string, documentType: string, documentNumber: string): boolean {
   // Demo mode: Just verify basic format, no strict validation
-  
+
   // Check if name is not empty
   if (!fullName || fullName.trim().length === 0) {
     return false;
   }
-  
+
   // Check document format only (no name matching)
   if (documentType === 'aadhaar') {
     // Aadhaar should be 12 digits
@@ -40,17 +40,19 @@ function mockVerifyDocument(fullName: string, documentType: string, documentNumb
       return false;
     }
   }
-  
+
   // Demo: Accept any name without matching against document
   // In production, this would verify name matches government records
   return true;
 }
 
+import { authOptions } from '@/lib/auth';
+
 export async function completeProfile(formData: ProfileFormData): Promise<ActionResult> {
   try {
     // Get the current session
-    const session = await getServerSession();
-    
+    const session = await getServerSession(authOptions);
+
     if (!session || !session.user) {
       return {
         success: false,
@@ -63,7 +65,7 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
 
     // Validate with Zod schema
     const validationResult = profileFormSchema.safeParse(sanitizedData);
-    
+
     if (!validationResult.success) {
       const fieldErrors: Record<string, string[]> = {};
       validationResult.error.errors.forEach((err) => {
@@ -73,7 +75,7 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
         }
         fieldErrors[field].push(err.message);
       });
-      
+
       return {
         success: false,
         error: 'Validation failed',
@@ -106,7 +108,7 @@ export async function completeProfile(formData: ProfileFormData): Promise<Action
 
     // Check if user already exists
     const existingUser = await User.findOne({ googleId });
-    
+
     if (existingUser) {
       return {
         success: false,

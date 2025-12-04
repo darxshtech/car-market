@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import connectDB from '@/lib/mongodb';
 import Listing from '@/lib/models/Listing';
+import '@/lib/models/User';
 import CarCard from './components/CarCard';
 import TailorTalkWidget from './components/TailorTalkWidget';
+import Locations from './components/Locations';
+import Brands from './components/Brands';
+import HeroSlider from './components/HeroSlider';
 
 async function getFeaturedListings() {
   try {
     await connectDB();
-    
+
     // Fetch approved listings, limit to 8 for featured section
     const listings = await Listing.find({ status: 'approved' })
       .populate('sellerId', 'fullName')
@@ -44,23 +48,22 @@ export default async function Home() {
 
   return (
     <div className="bg-gray-900 min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in">
+      {/* Hero Section with Background Slider */}
+      <section className="relative bg-black py-20 px-4 sm:px-6 lg:px-8 min-h-[600px] overflow-hidden">
+        {/* Background Slider */}
+        <HeroSlider />
+        
+        {/* Content Overlay */}
+        <div className="relative z-10 max-w-7xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 animate-fade-in drop-shadow-lg">
             DriveSphere — India&apos;s Trusted Car Market
           </h1>
-          <p className="text-xl sm:text-2xl text-cyan-400 mb-8 font-semibold">
+          <p className="text-xl sm:text-2xl text-cyan-400 mb-8 font-semibold drop-shadow-lg">
             Verified Users. Verified Cars.
           </p>
-          <p className="text-gray-300 text-lg mb-12 max-w-2xl mx-auto">
+          <p className="text-gray-100 text-lg mb-12 max-w-2xl mx-auto drop-shadow-lg">
             Buy and sell cars with confidence. Every user is verified, every listing is approved by our team.
-          </p> 
-          
-           
-          <div>
-            this is demo
-          </div>
+          </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -79,13 +82,13 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        </div>
       </section>
+
+      {/* Locations Section */}
+      <Locations />
+
+      {/* Brands Section */}
+      <Brands />
 
       {/* Featured Listings Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">

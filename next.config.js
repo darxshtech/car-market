@@ -26,6 +26,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.cars24.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.gaadi.com',
+      },
     ],
   },
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { scrapeListing, importScrapedListings } from '@/app/actions/admin';
 import { ScrapedCarData } from '@/lib/scraper';
 
@@ -15,7 +16,7 @@ export default function AdminScraperPage() {
 
   const handleScrape = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!url) {
       setError('Please enter a URL');
       return;
@@ -27,7 +28,7 @@ export default function AdminScraperPage() {
 
     try {
       const result = await scrapeListing(url);
-      
+
       if (result.success && result.data) {
         // result.data is now always an array
         setScrapedData(Array.isArray(result.data) ? result.data : [result.data]);
@@ -54,7 +55,7 @@ export default function AdminScraperPage() {
 
     try {
       const result = await importScrapedListings(scrapedData);
-      
+
       if (result.success) {
         alert(result.message || 'Listings imported successfully');
         setUrl('');
@@ -154,7 +155,7 @@ export default function AdminScraperPage() {
                   <h3 className="text-lg font-semibold text-white mb-3">
                     Car #{carIdx + 1}
                   </h3>
-                  
+
                   <div className="space-y-4">
                     {/* Images */}
                     {car.images.length > 0 && (
@@ -162,8 +163,14 @@ export default function AdminScraperPage() {
                         <p className="text-gray-400 text-sm mb-2">Images ({car.images.length})</p>
                         <div className="grid grid-cols-4 gap-2">
                           {car.images.slice(0, 4).map((img, idx) => (
-                            <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
-                              <img src={img} alt={`Car ${carIdx + 1} - ${idx + 1}`} className="w-full h-full object-cover" />
+                            <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden relative">
+                              <Image
+                                src={img}
+                                alt={`Car ${carIdx + 1} - ${idx + 1}`}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
                             </div>
                           ))}
                         </div>
@@ -218,9 +225,9 @@ export default function AdminScraperPage() {
             <h3 className="text-lg font-bold text-white mb-3">How to use the scraper</h3>
             <ol className="list-decimal list-inside space-y-2 text-gray-300">
               <li>Enter the URL of a car listing page (supports both single cars and listing pages with multiple cars)</li>
-              <li>Click "Scrape Listing" to extract the data</li>
+              <li>Click &quot;Scrape Listing&quot; to extract the data</li>
               <li>Review the extracted data in the preview</li>
-              <li>Click "Approve & Import All" to add the listings to the marketplace</li>
+              <li>Click &quot;Approve &amp; Import All&quot; to add the listings to the marketplace</li>
             </ol>
             <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2">
@@ -230,7 +237,7 @@ export default function AdminScraperPage() {
                 If scraping fails, try the demo mode by entering: <code className="bg-gray-800 px-2 py-1 rounded">https://demo.test</code>
               </p>
             </div>
-            
+
             <p className="mt-4 text-sm text-gray-400">
               <strong>Supported sites:</strong> CarDekho.com, CarWale.com, and other car listing websites
             </p>
