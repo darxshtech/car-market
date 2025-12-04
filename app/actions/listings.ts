@@ -20,8 +20,12 @@ export interface ActionResult {
 }
 
 /**
- * Mock ownership verification
+ * DEMO MODE: Mock ownership verification - accepts any valid format
  * In production, this would call an actual vehicle registration API
+ * 
+ * DEMO: This function now accepts any input without strict validation
+ * - Does NOT verify actual ownership
+ * - Only checks basic format requirements
  */
 export async function verifyOwnership(
   registrationNumber: string,
@@ -50,49 +54,34 @@ export async function verifyOwnership(
       ownerName: sanitizeString(ownerName),
     };
 
-    // Validate with Zod schema
-    const validationResult = ownershipFormSchema.safeParse(sanitizedData);
-    
-    if (!validationResult.success) {
-      const fieldErrors: Record<string, string[]> = {};
-      validationResult.error.errors.forEach((err) => {
-        const field = err.path[0] as string;
-        if (!fieldErrors[field]) {
-          fieldErrors[field] = [];
-        }
-        fieldErrors[field].push(err.message);
-      });
-      
+    // DEMO MODE: Basic validation only - accept any non-empty values
+    if (!sanitizedData.registrationNumber || sanitizedData.registrationNumber.trim().length === 0) {
       return {
         success: false,
-        error: 'Validation failed',
-        fieldErrors,
+        error: 'Registration number is required',
       };
     }
 
-    const validatedData = validationResult.data;
-
-    // Mock verification logic
-    // In production, this would call an external API to verify vehicle ownership
-    
-    // Mock: Simulate verification success if owner name has at least 2 words
-    const nameParts = validatedData.ownerName.trim().split(/\s+/);
-    if (nameParts.length < 2) {
+    if (!sanitizedData.ownerName || sanitizedData.ownerName.trim().length === 0) {
       return {
         success: false,
-        error: 'Ownership verification failed. Please ensure the name matches the registration documents.',
+        error: 'Owner name is required',
       };
     }
+
+    // DEMO MODE: Accept any format - no strict validation
+    // In production, this would validate against actual registration format
+    // and verify ownership through government APIs
 
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     return {
       success: true,
-      message: 'Ownership verified successfully',
+      message: 'Ownership verified successfully (Demo Mode)',
       data: {
-        registrationNumber: validatedData.registrationNumber.toUpperCase(),
-        ownerName: validatedData.ownerName,
+        registrationNumber: sanitizedData.registrationNumber.toUpperCase(),
+        ownerName: sanitizedData.ownerName,
       },
     };
   } catch (error) {

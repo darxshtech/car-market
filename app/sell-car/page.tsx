@@ -121,6 +121,11 @@ export default function SellCarPage() {
           <p className="text-gray-400">
             First, let&apos;s verify your vehicle ownership
           </p>
+          <div className="mt-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg px-3 py-2 inline-block">
+            <p className="text-yellow-400 text-xs font-medium">
+              🎭 DEMO MODE: Ownership verification simplified. Any valid format accepted.
+            </p>
+          </div>
         </div>
 
         {/* Ownership Verification Form */}
@@ -150,7 +155,7 @@ export default function SellCarPage() {
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Enter your vehicle registration number (e.g., MH12AB1234)
+                Demo: Enter any registration number (e.g., MH12AB1234)
               </p>
             </div>
 
@@ -170,7 +175,7 @@ export default function SellCarPage() {
                 className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Enter the owner name exactly as it appears on the registration certificate
+                Demo: Enter any name (no strict matching required)
               </p>
             </div>
 

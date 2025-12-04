@@ -57,6 +57,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check banned status from session token
+    // Check banned status from token
+    // Note: Real-time ban enforcement happens at the API level
+    // The token is updated when user signs in or session is refreshed
     if (token.banned) {
       return NextResponse.redirect(new URL('/?error=banned', request.url));
     }

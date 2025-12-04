@@ -1,5 +1,37 @@
 import mongoose from 'mongoose';
 
+// Validate critical environment variables on startup
+const criticalEnvVars = [
+  'MONGODB_URI',
+  'NEXTAUTH_SECRET',
+  'NEXTAUTH_URL',
+];
+
+const missingCriticalVars = criticalEnvVars.filter((varName) => !process.env[varName]);
+
+if (missingCriticalVars.length > 0) {
+  throw new Error(
+    `Missing required environment variables: ${missingCriticalVars.join(', ')}. Please define them in .env.local`
+  );
+}
+
+// Warn about optional but recommended variables
+const recommendedEnvVars = [
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'ENCRYPTION_KEY',
+  'ADMIN_EMAIL',
+  'ADMIN_PASS',
+];
+
+const missingRecommendedVars = recommendedEnvVars.filter((varName) => !process.env[varName]);
+
+if (missingRecommendedVars.length > 0 && process.env.NODE_ENV !== 'production') {
+  console.warn(
+    `Warning: Missing recommended environment variables: ${missingRecommendedVars.join(', ')}. Some features may not work correctly.`
+  );
+}
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {

@@ -56,16 +56,22 @@ export default function AdminScraperPage() {
     try {
       const result = await importScrapedListings(scrapedData);
 
+      
+      console.log('Import result:', result);
+      
       if (result.success) {
         alert(result.message || 'Listings imported successfully');
         setUrl('');
         setScrapedData([]);
       } else {
-        setError(result.error || 'Failed to import listings');
+        const errorMessage = result.error || 'Failed to import listings';
+        console.error('Import failed:', errorMessage);
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Import error:', err);
-      setError('An error occurred while importing');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while importing';
+      setError(errorMessage);
     } finally {
       setImporting(false);
     }
@@ -171,6 +177,9 @@ export default function AdminScraperPage() {
                                 className="object-cover"
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               />
+                            <div key={idx} className="aspect-video bg-gray-700 rounded-lg overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img} alt={`Car ${carIdx + 1} - ${idx + 1}`} className="w-full h-full object-cover" />
                             </div>
                           ))}
                         </div>
@@ -228,6 +237,7 @@ export default function AdminScraperPage() {
               <li>Click &quot;Scrape Listing&quot; to extract the data</li>
               <li>Review the extracted data in the preview</li>
               <li>Click &quot;Approve &amp; Import All&quot; to add the listings to the marketplace</li>
+              <li>Click &quot;Approve & Import All&quot; to add the listings to the marketplace</li>
             </ol>
             <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 mb-4">
               <p className="text-yellow-200 text-sm font-medium mb-2">

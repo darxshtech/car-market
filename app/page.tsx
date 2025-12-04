@@ -7,6 +7,11 @@ import TailorTalkWidget from './components/TailorTalkWidget';
 import Locations from './components/Locations';
 import Brands from './components/Brands';
 import HeroSlider from './components/HeroSlider';
+import User from '@/lib/models/User'; // Import User model for populate
+import CarCard from './components/CarCard';
+import TailorTalkWidget from './components/TailorTalkWidget';
+import HeroSection from './components/HeroSection';
+import FeaturedListings from './components/FeaturedListings';
 
 async function getFeaturedListings() {
   try {
@@ -124,6 +129,11 @@ export default async function Home() {
           )}
         </div>
       </section>
+      {/* Hero Section with Animations */}
+      <HeroSection />
+
+      {/* Featured Listings Section with Animations */}
+      <FeaturedListings listings={featuredListings} />
 
       {/* Features Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800/50">
