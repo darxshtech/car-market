@@ -22,7 +22,7 @@ export interface ActionResult {
 export async function approveListing(listingId: string): Promise<ActionResult> {
   try {
     const session = await getServerSession();
-    
+
     // Check if user is admin
     const adminEmail = process.env.ADMIN_EMAIL;
     if (!session || session.user.email !== adminEmail) {
@@ -78,7 +78,7 @@ export async function approveListing(listingId: string): Promise<ActionResult> {
 export async function rejectListing(listingId: string): Promise<ActionResult> {
   try {
     const session = await getServerSession();
-    
+
     // Check if user is admin
     const adminEmail = process.env.ADMIN_EMAIL;
     if (!session || session.user.email !== adminEmail) {
@@ -134,7 +134,7 @@ export async function rejectListing(listingId: string): Promise<ActionResult> {
 export async function banUser(userId: string): Promise<ActionResult> {
   try {
     const session = await getServerSession();
-    
+
     // Check if user is admin
     const adminEmail = process.env.ADMIN_EMAIL;
     if (!session || session.user.email !== adminEmail) {
@@ -152,6 +152,14 @@ export async function banUser(userId: string): Promise<ActionResult> {
       return {
         success: false,
         error: 'User not found',
+      };
+    }
+
+    // Prevent admin from banning themselves
+    if (user.email === adminEmail) {
+      return {
+        success: false,
+        error: 'You cannot ban yourself',
       };
     }
 
@@ -196,7 +204,7 @@ export async function banUser(userId: string): Promise<ActionResult> {
 export async function scrapeListing(url: string): Promise<ActionResult> {
   try {
     const session = await getServerSession();
-    
+
     // Check if user is admin
     const adminEmail = process.env.ADMIN_EMAIL;
     if (!session || session.user.email !== adminEmail) {
@@ -375,6 +383,7 @@ export async function importScrapedListings(
 ): Promise<ActionResult> {
   try {
     const session = await getServerSession();
+
     
     console.log('Import session:', session);
     console.log('Scraped data count:', scrapedData.length);
@@ -428,7 +437,7 @@ export async function importScrapedListings(
     // Import each scraped listing
     const importedListings = [];
     const errors = [];
-    
+
     for (const data of scrapedData) {
       try {
         console.log('Processing scraped data:', {
@@ -552,6 +561,129 @@ export async function importScrapedListings(
     return {
       success: false,
       error: `An error occurred while importing listings: ${errorMsg}`,
+    };
+  }
+}
+
+/**
+ * Delete a listing
+ * Only admin can delete listings
+ */
+export async function deleteListing(listingId: string): Promise<ActionResult> {
+  try {
+    const session = await getServerSession();
+
+    // Check if user is admin
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!session || session.user.email !== adminEmail) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+      };
+    }
+
+    await connectDB();
+
+    // Check if listing exists
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return {
+        success: false,
+        error: 'Listing not found',
+      };
+    }
+
+    // Delete listing
+    await Listing.findByIdAndDelete(listingId);
+
+    // Log admin action
+    await AdminLog.create({
+      action: 'delete_listing',
+      targetId: listingId,
+      targetType: 'listing',
+      details: {
+        listingBrand: listing.brand,
+        listingModel: listing.carModel,
+        adminEmail: session.user.email,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Listing deleted successfully',
+    };
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    return {
+      success: false,
+      error: 'An error occurred while deleting the listing',
+    };
+  }
+}
+
+/**
+ * Update listing status (Activate/Deactivate)
+ * Only admin can update listing status
+ */
+export async function updateListingStatus(listingId: string, status: string): Promise<ActionResult> {
+  try {
+    const session = await getServerSession();
+
+    // Check if user is admin
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!session || session.user.email !== adminEmail) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+      };
+    }
+
+    await connectDB();
+
+    // Validate status
+    const validStatuses = ['active', 'inactive', 'approved', 'rejected', 'sold'];
+    if (!validStatuses.includes(status)) {
+      return {
+        success: false,
+        error: 'Invalid status',
+      };
+    }
+
+    // Check if listing exists
+    const listing = await Listing.findById(listingId);
+    if (!listing) {
+      return {
+        success: false,
+        error: 'Listing not found',
+      };
+    }
+
+    // Update status
+    await Listing.findByIdAndUpdate(listingId, { status });
+
+    // Log admin action
+    await AdminLog.create({
+      action: 'update_listing_status',
+      targetId: listingId,
+      targetType: 'listing',
+      details: {
+        listingBrand: listing.brand,
+        listingModel: listing.carModel,
+        oldStatus: listing.status,
+        newStatus: status,
+        adminEmail: session.user.email,
+      },
+    });
+
+    return {
+      success: true,
+      message: `Listing status updated to ${status}`,
+    };
+  } catch (error) {
+    console.error('Error updating listing status:', error);
+    return {
+      success: false,
+      error: 'An error occurred while updating the listing status',
     };
   }
 }

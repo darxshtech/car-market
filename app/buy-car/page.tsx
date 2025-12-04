@@ -6,6 +6,8 @@ import FilterPanel from '../components/FilterPanel';
 import SortDropdown, { SortOption } from '../components/SortDropdown';
 import TailorTalkWidget from '../components/TailorTalkWidget';
 
+export const dynamic = 'force-dynamic';
+
 interface SearchParams {
   q?: string;
   brands?: string;
@@ -143,8 +145,8 @@ async function getListings(searchParams: SearchParams) {
       description: listing.description,
       seller: listing.sellerId
         ? {
-            fullName: listing.sellerId.fullName,
-          }
+          fullName: listing.sellerId.fullName,
+        }
         : undefined,
     }));
 

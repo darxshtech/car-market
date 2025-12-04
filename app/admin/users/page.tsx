@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { banUser } from '@/app/actions/admin';
+import { useSession } from 'next-auth/react';
 
 interface User {
   _id: string;
@@ -18,6 +19,7 @@ interface User {
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,7 +33,7 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/users');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
@@ -55,11 +57,11 @@ export default function AdminUsersPage() {
     try {
       setProcessingId(userId);
       const result = await banUser(userId);
-      
+
       if (result.success) {
         // Update user in list
-        setUsers(prev => prev.map(user => 
-          user._id === userId 
+        setUsers(prev => prev.map(user =>
+          user._id === userId
             ? { ...user, banned: result.data?.banned ?? !currentBannedStatus }
             : user
         ));
@@ -183,12 +185,11 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
                           onClick={() => handleBanToggle(user._id, user.banned)}
-                          disabled={processingId === user._id}
-                          className={`px-3 py-1 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            user.banned
+                          disabled={processingId === user._id || user.email === session?.user?.email}
+                          className={`px-3 py-1 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${user.banned
                               ? 'bg-green-600 hover:bg-green-700 text-white'
                               : 'bg-red-600 hover:bg-red-700 text-white'
-                          }`}
+                            }`}
                         >
                           {processingId === user._id ? 'Processing...' : user.banned ? 'Unban' : 'Ban'}
                         </button>
